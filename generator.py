@@ -1,7 +1,7 @@
 import random
 import numpy as np
 import skimage.io
-from tensorflow.python.keras.utils.data_utils import Sequence
+from tensorflow.keras.utils import Sequence
 # import imgaug.augmenters as iaa
 # import imgaug as ia
 
