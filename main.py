@@ -12,7 +12,7 @@ import pickle
 import json
 
 import tensorflow as tf
-from tensorflow.keras.callbacks import TensorBoard
+from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import *
 from tensorflow.keras.optimizers import *
@@ -111,6 +111,7 @@ def create_tiles_for_prediction(tif_path, resize_factor=100, size=256, nr_channe
 def load_test_images(test_im, test_an, size=256):
     X_test = np.zeros((len(test_im), size, size, 3), dtype=np.float32)
     Y_test = np.zeros((len(test_im), size, size), dtype=np.float32)
+    image_name = []
 
     for n in range(len(test_im)):
         img = Image.open(test_im[n])
@@ -118,11 +119,13 @@ def load_test_images(test_im, test_an, size=256):
         X_test[n] = np_img
         
         anno = Image.open(test_an[n])
-        np_an = (np.array(anno)/255).astype(int)
+        # np_an = (np.array(anno)/255).astype(int)
+        np_an = np.array(anno)
         Y_test[n] = np_an
         
+        image_name.append(os.path.splitext(os.path.basename(test_im[n]))[0])
 
-    return X_test, Y_test
+    return X_test, Y_test, image_name
     
 
 def predict(X_test, log_dir, filename, Y_test=None, tile_name=None):
@@ -133,21 +136,18 @@ def predict(X_test, log_dir, filename, Y_test=None, tile_name=None):
     for i in range(X_test.shape[0]):
         predictions = np.repeat(test_pred[i,:,:], 3, axis=2)
         
-        if Y_test == None: 
-            concat_array = np.concatenate((X_test[i], predictions), axis=1)
-        else:
+        if isinstance(Y_test, np.ndarray): 
             annotations = np.repeat(Y_test[i][...,np.newaxis], 3, axis=2)
             concat_array = np.concatenate((X_test[i], annotations, predictions), axis=1)
+        else:
+            concat_array = np.concatenate((X_test[i], predictions), axis=1)
 
         concat_img = Image.fromarray((concat_array*255).astype(np.uint8), 'RGB')
 
         save_dir = os.path.join(log_dir, filename)
         utils.ensure_directory_existance(save_dir)
-        if tile_name==None:
-            concat_img.save(os.path.join(save_dir, str(i)+'.png'))
-        else:
-            concat_img.save(os.path.join(save_dir, tile_name[i]+'.png'))
 
+        concat_img.save(os.path.join(save_dir, tile_name[i]+'.png'))
     return
 
 
@@ -161,17 +161,18 @@ if __name__ == "__main__":
 
     model_name = '0121v0_dataset_50ep' # month, day, version, _model
     log_dir = '/Users/Willem/Werk/510/510_cloud_detection/log/' + model_name  #save weights, results & tensorboard
-    checkpoint_path = '/Users/Willem/Werk/510/510_cloud_detection/saved_runs/0119v0_dataset_50ep.h5'
+    checkpoint_path = '/Users/Willem/Werk/510/510_cloud_detection/log/0119v0_dataset_50ep/0119v0_dataset_50ep.h5' #'/Users/Willem/Werk/510/510_cloud_detection/log/0124v0_dataset_38_10ep/weights.08.hdf5' #'/Users/Willem/Werk/510/510_cloud_detection/log/0119v0_dataset_50ep/0119v0_dataset_50ep.h5'
     # maxar_path = '/Users/Willem/Werk/510/510_cloud_detection/geotiff_examples/maxar_clouds_small.tif'
     maxar_path = '/Users/Willem/Werk/510/510_cloud_detection/geotiff_examples/maxar_clouds.tif'
 
 
     train = False
     resume = True
-    test_model = False
-    test_maxar = True
+    test_model = True
+    test_maxar = False
     size=256
     lr=1e-4
+    resize_factor = 150
 
 
     train_im = utils.get_list_of_files(os.path.join(path_data, 'rgb_images/train/'))
@@ -195,13 +196,13 @@ if __name__ == "__main__":
     # Test model on test set or maxar TIF images
     if test_model:
         print("Testing on dataset")
-        X_test, Y_test = load_test_images(test_im, test_an, size=256)
-        predict(X_test, Y_test=Y_test, log_dir=log_dir, filename=dataset)
+        X_test, Y_test, image_name = load_test_images(test_im, test_an, size=256)
+        predict(X_test, Y_test=Y_test, tile_name=image_name, log_dir=log_dir, filename=dataset)
 
 
     if test_maxar:
         print("Testing Maxar file")
-        downsized_img, X_test, tile_name = create_tiles_for_prediction(maxar_path, resize_factor=100, size=256, nr_channels=3) #resize factor depends on sensor resolution, landsat 30m, maxar 30cm
+        downsized_img, X_test, tile_name = create_tiles_for_prediction(maxar_path, resize_factor=resize_factor, size=256, nr_channels=3) #resize factor depends on sensor resolution, landsat 30m, sentinel 10m, maxar 30cm & dataset resized 512->256 & 384 ->256
         predict(X_test, tile_name=tile_name, log_dir=log_dir, filename=os.path.splitext(os.path.basename(maxar_path))[0])
 
 

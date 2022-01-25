@@ -168,7 +168,8 @@ class DataGenerator(Sequence):
         :return: loaded annotation
         """
         an = Image.open(anno_path)
-        anno = (np.array(an)/255).astype(np.uint8)
+        # anno = (np.array(an)/255).astype(np.uint8)
+        anno = np.array(an)
         return anno.reshape((anno.shape[0], anno.shape[1], 1)).astype(self.dtype)
 
 

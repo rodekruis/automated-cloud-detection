@@ -7,11 +7,8 @@ import glob
 
 
 
-
-
-
-def get_list_of_files(dir_path, sorted=True):
-    """Get list of filepaths to png files within a directoy.
+def get_list_of_files(dir_path, ext='', search_within=True, sorted=True):
+    """Get list of filepaths to files within a directoy.
 
         Args:
             dir_path (str): path to directory
@@ -20,12 +17,38 @@ def get_list_of_files(dir_path, sorted=True):
         Returns:
             all_files (list): list of all filepaths (str)
     """
-    all_files = glob.glob(dir_path + '*.png')
+    list_of_files = os.listdir(dir_path)
+    all_files = list()
+    for entry in list_of_files:
+        full_path = os.path.join(dir_path, entry)
+        if os.path.isdir(full_path) & search_within:
+            all_files = all_files + get_list_of_files(full_path)
+        else:
+            all_files.append(full_path)
+            
+    filtered_files = [x for x in all_files if x.endswith(ext)]
     
     if sorted:
-        all_files.sort()
+        filtered_files.sort()
+    return filtered_files
 
-    return all_files
+
+# def get_list_of_files(dir_path, sorted=True):
+#     """Get list of filepaths to png files within a directoy.
+
+#         Args:
+#             dir_path (str): path to directory
+#             sorted (bool, optional): True to sort the output filenames.
+
+#         Returns:
+#             all_files (list): list of all filepaths (str)
+#     """
+#     all_files = glob.glob(dir_path + '*.png')
+    
+#     if sorted:
+#         all_files.sort()
+
+#     return all_files
 
 
 
