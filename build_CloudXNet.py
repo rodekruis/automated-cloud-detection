@@ -269,7 +269,9 @@ def improve_ff_block1(input_tensor1, pure_ff):
     x = Activation("relu")(x)
     return x
 
-
+def pre_process_standardize(img):
+    img = (img - np.mean(img, axis=(0,1)))/np.std(img, axis=(0,1))
+    return img
 
 def pre_process_255(X):
     return X/255 #specify type?
@@ -328,7 +330,7 @@ def model_arch(input_rows=256, input_cols=256, num_of_channels=3, num_of_classes
 
     conv12 = Conv2D(num_of_classes, (1, 1), activation='sigmoid')(conv11)
 
-    return Model(inputs=[inputs], outputs=[conv12]), pre_process_255
+    return Model(inputs=[inputs], outputs=[conv12]), pre_process_standardize
 
 
 

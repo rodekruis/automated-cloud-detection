@@ -25,6 +25,7 @@ import rasterio as rio
 from rasterio.plot import show
 
 import build_CloudXNet 
+import build_UNet
 import utils
 from metrics import *
 from generator import DataGenerator
@@ -41,9 +42,16 @@ from generator import DataGenerator
 
 
 
-def build_model(checkpoint_path, lr=1e-4, size=256, resume=False):
+def build_model(checkpoint_path, model_name='CloudXNet', lr=1e-4, size=256, resume=False, freeze_backbone = False):
 
-    model, pre_process = build_CloudXNet.model_arch(input_rows=size, input_cols=size, num_of_channels=3, num_of_classes=1)
+    if model_name == 'CloudXNet':
+        model, pre_process = build_CloudXNet.model_arch(input_rows=size, input_cols=size, num_of_channels=3, num_of_classes=1)
+    elif model_name == 'UNet':
+        model, pre_process = build_UNet.build_unet(input_size=(size,size,3), freeze_backbone=freeze_backbone)
+    
+
+    print(model.summary())
+    
     model.compile(optimizer = Adam(lr = lr), loss = jacc_loss, metrics = [dice_score,'accuracy'])
 
     if resume:
@@ -53,7 +61,7 @@ def build_model(checkpoint_path, lr=1e-4, size=256, resume=False):
     return model, pre_process
 
 
-def train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir, batch_size=4, epochs=50, size=256, augmentation=False):
+def train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir, model_name, batch_size=4, epochs=50, size=256, augmentation=False):
 
     train_gen = DataGenerator(train_im, train_an, pre_process, batch_size=batch_size, width=size,
         height=size, augmentation=augmentation)
@@ -64,7 +72,7 @@ def train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir,
     log_name = "tensorboard"
     tensorboard = TensorBoard(log_dir=os.path.join(log_dir, log_name))
     checkpoint_path = os.path.join(log_dir, "weights.{epoch:02d}.hdf5")
-    checkpointer = ModelCheckpoint(checkpoint_path, monitor= "val_loss", save_best_only = True, save_weights_only=True)
+    checkpointer = ModelCheckpoint(checkpoint_path, monitor= "val_loss", save_best_only = False, save_weights_only=True, save_freq='epoch')
 
     results = model.fit(train_gen, validation_data=val_gen, epochs=epochs, verbose=1, callbacks=[tensorboard, checkpointer])
 
@@ -144,7 +152,7 @@ def predict(X_test, log_dir, filename, Y_test=None, tile_name=None):
 
         concat_img = Image.fromarray((concat_array*255).astype(np.uint8), 'RGB')
 
-        save_dir = os.path.join(log_dir, filename)
+        save_dir = os.path.join(log_dir, filename + '_0.5')
         utils.ensure_directory_existance(save_dir)
 
         concat_img.save(os.path.join(save_dir, tile_name[i]+'.png'))
@@ -156,53 +164,57 @@ if __name__ == "__main__":
     print("Initializing")
 
     # dataset parameters
-    dataset = 'dataset_input/' # name of folder 
+    dataset = 'biome_input/' # name of folder 
     path_data = '/Users/Willem/Werk/510/510_cloud_detection/' + dataset #/Users/Willem/Werk/510
 
-    model_name = '0121v0_dataset_50ep' # month, day, version, _model
+    model_name = '0126v1_biome_3ep' # month, day, version, _model
     log_dir = '/Users/Willem/Werk/510/510_cloud_detection/log/' + model_name  #save weights, results & tensorboard
-    checkpoint_path = '/Users/Willem/Werk/510/510_cloud_detection/log/0119v0_dataset_50ep/0119v0_dataset_50ep.h5' #'/Users/Willem/Werk/510/510_cloud_detection/log/0124v0_dataset_38_10ep/weights.08.hdf5' #'/Users/Willem/Werk/510/510_cloud_detection/log/0119v0_dataset_50ep/0119v0_dataset_50ep.h5'
-    # maxar_path = '/Users/Willem/Werk/510/510_cloud_detection/geotiff_examples/maxar_clouds_small.tif'
-    maxar_path = '/Users/Willem/Werk/510/510_cloud_detection/geotiff_examples/maxar_clouds.tif'
+    checkpoint_path = '/Users/Willem/Werk/510/510_cloud_detection/log/0126v0_biome_3ep/weights.03.hdf5' #'/Users/Willem/Werk/510/510_cloud_detection/log/0124v0_dataset_38_10ep/weights.08.hdf5' #'/Users/Willem/Werk/510/510_cloud_detection/log/0119v0_dataset_50ep/0119v0_dataset_50ep.h5'
+    maxar_path = '/Users/Willem/Werk/510/510_cloud_detection/geotiff_examples/maxar_clouds_small.tifpreprocess'
+    # maxar_path = '/Users/Willem/Werk/510/510_cloud_detection/geotiff_examples/maxar_clouds.tif'
 
 
-    train = False
-    resume = True
-    test_model = True
-    test_maxar = False
+    train = True
+    resume = False
+    test_model = False
+    test_maxar = False 
+    model_name = 'CloudXNet' #'CloudXNet', 'UNet'
+    epoch = 3
+    batch_size = 4
     size=256
     lr=1e-4
-    resize_factor = 150
+    resize_factor = 100
+    
 
 
-    train_im = utils.get_list_of_files(os.path.join(path_data, 'rgb_images/train/'))
-    train_an = utils.get_list_of_files(os.path.join(path_data, 'annotations/train/'))
-    val_im = utils.get_list_of_files(os.path.join(path_data, 'rgb_images/val/'))
-    val_an = utils.get_list_of_files(os.path.join(path_data, 'annotations/val/'))
-    test_im = utils.get_list_of_files(os.path.join(path_data, 'rgb_images/test/'))
-    test_an = utils.get_list_of_files(os.path.join(path_data, 'annotations/test/'))
+    train_im = utils.get_list_of_files(os.path.join(path_data, 'rgb_images/train/'), ext='.png')
+    train_an = utils.get_list_of_files(os.path.join(path_data, 'annotations/train/'), ext='.png')
+    val_im = utils.get_list_of_files(os.path.join(path_data, 'rgb_images/val/'), ext='.png')
+    val_an = utils.get_list_of_files(os.path.join(path_data, 'annotations/val/'), ext='.png')
+    test_im = utils.get_list_of_files(os.path.join(path_data, 'rgb_images/test/'), ext='.png')
+    test_an = utils.get_list_of_files(os.path.join(path_data, 'annotations/test/'), ext='.png')
     
     # Build model
     print("Building model")
-    model, pre_process = build_model(checkpoint_path, lr=lr, size=size, resume=resume)
+    model, pre_process = build_model(checkpoint_path, model_name=model_name, lr=lr, size=size, resume=resume)
 
 
     # Train model
     if train:
         print("Training")
-        model = train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir, batch_size=4, epochs=50, size=256, augmentation=False)
+        model = train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir, model_name, batch_size=batch_size, epochs=epoch, size=size, augmentation=False)
 
 
     # Test model on test set or maxar TIF images
     if test_model:
         print("Testing on dataset")
-        X_test, Y_test, image_name = load_test_images(test_im, test_an, size=256)
+        X_test, Y_test, image_name = load_test_images(test_im, test_an, size=size)
         predict(X_test, Y_test=Y_test, tile_name=image_name, log_dir=log_dir, filename=dataset)
 
 
     if test_maxar:
         print("Testing Maxar file")
-        downsized_img, X_test, tile_name = create_tiles_for_prediction(maxar_path, resize_factor=resize_factor, size=256, nr_channels=3) #resize factor depends on sensor resolution, landsat 30m, sentinel 10m, maxar 30cm & dataset resized 512->256 & 384 ->256
+        downsized_img, X_test, tile_name = create_tiles_for_prediction(maxar_path, resize_factor=resize_factor, size=size, nr_channels=3) #resize factor depends on sensor resolution, landsat 30m, sentinel 10m, maxar 30cm & dataset resized 512->256 & 384 ->256
         predict(X_test, tile_name=tile_name, log_dir=log_dir, filename=os.path.splitext(os.path.basename(maxar_path))[0])
 
 
