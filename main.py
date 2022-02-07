@@ -72,7 +72,7 @@ def train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir,
     log_name = "tensorboard"
     tensorboard = TensorBoard(log_dir=os.path.join(log_dir, log_name))
     checkpoint_path = os.path.join(log_dir, "weights.{epoch:02d}.hdf5")
-    checkpointer = ModelCheckpoint(checkpoint_path, monitor= "val_loss", save_best_only = False, save_weights_only=True, save_freq='epoch')
+    checkpointer = ModelCheckpoint(checkpoint_path, monitor= "val_loss", save_best_only = True, save_weights_only=True)#, save_freq='epoch')
 
     results = model.fit(train_gen, validation_data=val_gen, epochs=epochs, verbose=1, callbacks=[tensorboard, checkpointer])
 
@@ -109,7 +109,7 @@ def create_tiles_for_prediction(tif_path, resize_factor=100, size=256, nr_channe
     all_tiles = np.zeros((nr_tiles_h*nr_tiles_w, size , size, nr_channels), dtype=np.float32)
     for i in range(nr_tiles_h):
         for j in range(nr_tiles_w): #might need to swap nr_tiles_h/w
-            all_tiles[k,:,:,:] = full_img[i*size:(i+1)*size,j*size:(j+1)*size,:]/255
+            all_tiles[k,:,:,:] = full_img[i*size:(i+1)*size,j*size:(j+1)*size,:]#/255
             tile_name.append(str(i*size) + '_' + str(j*size))
             k +=1
     
@@ -123,7 +123,8 @@ def load_test_images(test_im, test_an, size=256):
 
     for n in range(len(test_im)):
         img = Image.open(test_im[n])
-        np_img = (np.array(img)/255).astype(np.float32)
+        np_img = np.array(img)
+        # np_img = pre_process(np_img)
         X_test[n] = np_img
         
         anno = Image.open(test_an[n])
@@ -136,9 +137,13 @@ def load_test_images(test_im, test_an, size=256):
     return X_test, Y_test, image_name
     
 
-def predict(X_test, log_dir, filename, Y_test=None, tile_name=None):
+def predict(X_test, log_dir, filename, pre_process, Y_test=None, tile_name=None):
+    pre_processed_X = np.zeros(X_test.shape, dtype=np.float32)
 
-    preds_test = model.predict(X_test, batch_size=2, verbose=1)
+    for i in range(X_test.shape[0]):
+        pre_processed_X[i,:,:,:] = pre_process(X_test[i,:,:,:])
+
+    preds_test = model.predict(pre_processed_X, batch_size=2, verbose=1)
     test_pred = (preds_test > 0.5).astype(int)
 
     for i in range(X_test.shape[0]):
@@ -146,11 +151,11 @@ def predict(X_test, log_dir, filename, Y_test=None, tile_name=None):
         
         if isinstance(Y_test, np.ndarray): 
             annotations = np.repeat(Y_test[i][...,np.newaxis], 3, axis=2)
-            concat_array = np.concatenate((X_test[i], annotations, predictions), axis=1)
+            concat_array = np.concatenate((X_test[i], annotations*255, predictions*255), axis=1)
         else:
-            concat_array = np.concatenate((X_test[i], predictions), axis=1)
+            concat_array = np.concatenate((X_test[i], predictions*255), axis=1)
 
-        concat_img = Image.fromarray((concat_array*255).astype(np.uint8), 'RGB')
+        concat_img = Image.fromarray(concat_array.astype(np.uint8), 'RGB')
 
         save_dir = os.path.join(log_dir, filename + '_0.5')
         utils.ensure_directory_existance(save_dir)
@@ -167,10 +172,10 @@ if __name__ == "__main__":
     dataset = 'biome_input/' # name of folder 
     path_data = '/Users/Willem/Werk/510/510_cloud_detection/' + dataset #/Users/Willem/Werk/510
 
-    model_name = '0126v1_biome_3ep' # month, day, version, _model
+    model_name = '0207v0_biome_20ep' # month, day, version, _model
     log_dir = '/Users/Willem/Werk/510/510_cloud_detection/log/' + model_name  #save weights, results & tensorboard
-    checkpoint_path = '/Users/Willem/Werk/510/510_cloud_detection/log/0126v0_biome_3ep/weights.03.hdf5' #'/Users/Willem/Werk/510/510_cloud_detection/log/0124v0_dataset_38_10ep/weights.08.hdf5' #'/Users/Willem/Werk/510/510_cloud_detection/log/0119v0_dataset_50ep/0119v0_dataset_50ep.h5'
-    maxar_path = '/Users/Willem/Werk/510/510_cloud_detection/geotiff_examples/maxar_clouds_small.tifpreprocess'
+    checkpoint_path = '/Users/Willem/Werk/510/510_cloud_detection/log/0126v1_biome_2ep/weights.02.hdf5' #'/Users/Willem/Werk/510/510_cloud_detection/log/0124v0_dataset_38_10ep/weights.08.hdf5' #'/Users/Willem/Werk/510/510_cloud_detection/log/0119v0_dataset_50ep/0119v0_dataset_50ep.h5'
+    maxar_path = '/Users/Willem/Werk/510/510_cloud_detection/geotiff_examples/maxar_clouds_small.tif'
     # maxar_path = '/Users/Willem/Werk/510/510_cloud_detection/geotiff_examples/maxar_clouds.tif'
 
 
@@ -179,8 +184,8 @@ if __name__ == "__main__":
     test_model = False
     test_maxar = False 
     model_name = 'CloudXNet' #'CloudXNet', 'UNet'
-    epoch = 3
-    batch_size = 4
+    epoch=20
+    batch_size=4
     size=256
     lr=1e-4
     resize_factor = 100
@@ -209,13 +214,13 @@ if __name__ == "__main__":
     if test_model:
         print("Testing on dataset")
         X_test, Y_test, image_name = load_test_images(test_im, test_an, size=size)
-        predict(X_test, Y_test=Y_test, tile_name=image_name, log_dir=log_dir, filename=dataset)
+        predict(X_test, Y_test=Y_test, tile_name=image_name, log_dir=log_dir, pre_process=pre_process, filename=dataset)
 
 
     if test_maxar:
         print("Testing Maxar file")
         downsized_img, X_test, tile_name = create_tiles_for_prediction(maxar_path, resize_factor=resize_factor, size=size, nr_channels=3) #resize factor depends on sensor resolution, landsat 30m, sentinel 10m, maxar 30cm & dataset resized 512->256 & 384 ->256
-        predict(X_test, tile_name=tile_name, log_dir=log_dir, filename=os.path.splitext(os.path.basename(maxar_path))[0])
+        predict(X_test, tile_name=tile_name, log_dir=log_dir, pre_process=pre_process, filename=os.path.splitext(os.path.basename(maxar_path))[0])
 
 
     
