@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import random
 import matplotlib.pyplot as plt
-from tqdm import tqdm 
+# from tqdm import tqdm 
 from PIL import Image
 from sklearn.metrics import confusion_matrix
 # import cv2 #pip install opencv-python==4.0.0.21
@@ -48,7 +48,7 @@ def build_model(checkpoint_path, model_name='CloudXNet', lr=1e-4, size=256, resu
         model, pre_process = build_UNet.build_unet(input_size=(size,size,3), freeze_backbone=freeze_backbone)
     
 
-    print(model.summary())
+    # print(model.summary())
     
     model.compile(optimizer = Adam(lr = lr), loss = jacc_loss, metrics = [dice_score,'accuracy'])
 
@@ -168,10 +168,10 @@ if __name__ == "__main__":
 
     # dataset parameters
     dataset = 'biome_input/' # name of folder 
-    path_data = '/home/NC6user/510_cloud_detection/' + dataset #/Users/Willem/Werk/510, /home/NC6user/
+    path_data = '/' + dataset #/Users/Willem/Werk/510, /home/NC6user/
 
-    model_name = '0207v1_biome_20ep' # month, day, version, _model
-    log_dir = '/home/NC6user/510_cloud_detection/log/' + model_name  #save weights, results & tensorboard
+    model_name = '0208v0_biome_20ep' # month, day, version, _model
+    log_dir = '/log/' + model_name  #save weights, results & tensorboard /home/NC6user/510_cloud_detection/log/
     checkpoint_path = '/home/NC6user/510_cloud_detection/log/0126v1_biome_2ep/weights.02.hdf5' #'/Users/Willem/Werk/510/510_cloud_detection/log/0124v0_dataset_38_10ep/weights.08.hdf5' #'/Users/Willem/Werk/510/510_cloud_detection/log/0119v0_dataset_50ep/0119v0_dataset_50ep.h5'
     maxar_path = '/home/NC6user/510_cloud_detection/geotiff_examples/maxar_clouds_small.tif'
     # maxar_path = '/Users/Willem/Werk/510/510_cloud_detection/geotiff_examples/maxar_clouds.tif'
