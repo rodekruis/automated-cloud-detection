@@ -112,7 +112,7 @@ def build_unet(backbone_name = 'VGG16', input_size=(256,256,3),
 
 
     skips = [backbone.get_layer(name=i).output if isinstance(i, str)
-        else backbone.get_layer(index=i).output for i in backbones.SKIP_LAYERS[backbone_name]]
+        else backbone.get_layer(index=i).output for i in SKIP_LAYERS[backbone_name]]
 
     inputs = backbone.input
     x = backbone.output
@@ -136,13 +136,11 @@ def build_unet(backbone_name = 'VGG16', input_size=(256,256,3),
     x = Conv3x3(x, 16, use_batchnorm, activation = 'relu', name='clouds_block1_conv2')
     x = Conv2D(1, 1, activation = 'sigmoid', name='clouds', data_format=DATA_FORMAT)(x)
     model = Model(inputs = inputs, outputs = x)
-
-
-    model = Model(inputs = inputs, outputs = mat)
-
+    
+    
     if regularization:
         for l in model.layers:
-            l.kernel_regularizer = keras.regularizers.l2(l=0.1)
+            l.kernel_regularizer = tf.keras.regularizers.l2(l=0.1)
 
     model.model_name = "unet_vgg16"
     model.output_width = input_size[0]
