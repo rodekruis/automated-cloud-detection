@@ -52,7 +52,7 @@ def build_model(checkpoint_path, model_name='CloudXNet', lr=1e-4, size=256, resu
 
     # print(model.summary())
     
-    model.compile(optimizer = Adam(lr = lr), loss = fbeta_loss, metrics = [jacc_score,'accuracy'])
+    model.compile(optimizer = Adam(lr = lr), loss = tf.keras.losses.BinaryCrossentropy(), metrics = [dice_score, fbeta_score, 'accuracy'])
 
     if resume:
         print('Resuming from weights')
@@ -70,7 +70,7 @@ def train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir,
 
     utils.ensure_directory_existance(log_dir)
     log_name = "tensorboard"
-
+    class_weight = {0: 1., 1: 3.}
 
     if model_name == 'UNet':
         pre_run_epochs = 3
@@ -82,7 +82,7 @@ def train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir,
         tensorboard = TensorBoard(log_dir=os.path.join(log_dir, 'run_1', log_name))
         checkpoint_path = os.path.join(log_dir, 'run_1', "weights.{epoch:02d}.hdf5")
         checkpointer = ModelCheckpoint(checkpoint_path, monitor= "val_loss", save_weights_only=True, save_freq='epoch')
-        results_1 = model.fit(train_gen, validation_data=val_gen, epochs=pre_run_epochs, verbose=1, callbacks=[tensorboard, checkpointer])
+        results_1 = model.fit(train_gen, validation_data=val_gen, epochs=pre_run_epochs,  class_weight=class_weight, verbose=1, callbacks=[tensorboard, checkpointer])
 
         # Second run
         print('Building second model without frozen weights')
@@ -96,7 +96,7 @@ def train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir,
         checkpointer = ModelCheckpoint(checkpoint_path, monitor= "val_loss", save_best_only = True, save_weights_only=True)
 
         print("Training second model for nr_epochs:", epochs-pre_run_epochs)
-        results = model_2.fit(train_gen, validation_data=val_gen, epochs=epochs-pre_run_epochs, verbose=1, callbacks=[tensorboard, checkpointer])
+        results = model_2.fit(train_gen, validation_data=val_gen, epochs=epochs-pre_run_epochs,  class_weight=class_weight, verbose=1, callbacks=[tensorboard, checkpointer])
 
 
     else:
@@ -104,7 +104,7 @@ def train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir,
         checkpoint_path = os.path.join(log_dir, "weights.{epoch:02d}.hdf5")
         checkpointer = ModelCheckpoint(checkpoint_path, monitor= "val_loss", save_best_only = True, save_weights_only=True)#, save_freq='epoch')
 
-        results = model.fit(train_gen, validation_data=val_gen, epochs=epochs, verbose=1, callbacks=[tensorboard, checkpointer])
+        results = model.fit(train_gen, validation_data=val_gen, epochs=epochs,  class_weight=class_weight, verbose=1, callbacks=[tensorboard, checkpointer])
 
     # Write metrics
     json_path = os.path.join(log_dir, 'metrics.json')

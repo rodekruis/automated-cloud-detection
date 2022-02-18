@@ -15,15 +15,15 @@ def jacc_score(y_true, y_pred):
     return jacc
 
 
-# def dice_score(y_true, y_pred):
-#     y_true_f = K.flatten(y_true)
-#     y_pred_f = K.flatten(y_pred)
-#     intersection = K.sum(y_true_f * y_pred_f)
-#     union = K.sum(y_true_f) + K.sum(y_pred_f)
-#     dice = (2. * intersection + smooth)/(union + smooth)
-#     return dice
+def dice_score(y_true, y_pred):
+    y_true_f = K.flatten(y_true)
+    y_pred_f = K.flatten(y_pred)
+    intersection = K.sum(y_true_f * y_pred_f)
+    union = K.sum(y_true_f) + K.sum(y_pred_f)
+    dice = (2. * intersection + smooth)/(union + smooth)
+    return dice
 
-def fbeta_loss(y_true, y_pred, beta=2., epsilon=K.epsilon()):
+def fbeta_score(y_true, y_pred, beta=2., epsilon=K.epsilon()):
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
     
@@ -38,7 +38,11 @@ def fbeta_loss(y_true, y_pred, beta=2., epsilon=K.epsilon()):
     beta_squared = K.square(beta)
     fb = (1+beta_squared)*precision*recall / (beta_squared*precision + recall + epsilon)
 
-    return 1-fb
+    return fb
+
+def fbeta_loss(y_true, y_pred, beta=2., epsilon=K.epsilon()):
+
+    return 1 - fbeta_score(y_true, y_pred, beta=beta, epsilon=epsilon)
 
 
 # def fbeta_loss(ytrue , ypred, beta=2, threshold=0.5, epsilon=K.epsilon()):
