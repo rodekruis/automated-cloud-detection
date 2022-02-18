@@ -73,7 +73,7 @@ def train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir,
 
 
     if model_name == 'UNet':
-        pre_run_epochs = 2
+        pre_run_epochs = 3
         print('Train with frozen backbone for nr epochs:', pre_run_epochs)
 
         # First run
@@ -201,20 +201,20 @@ if __name__ == "__main__":
 
     # dataset parameters
     dataset = 'biome_input/' # name of folder 
-    path_data = '/Users/Willem/Werk/510/510_cloud_detection/' + dataset #/Users/Willem/Werk/510, /home/NC6user/510_cloud_detection/log/0209v0_biome_20ep
+    path_data = '/' + dataset #/Users/Willem/Werk/510, /home/NC6user/510_cloud_detection/log/0209v0_biome_20ep
 
-    log_name = '0215v0_biome_30ep' # month, day, version, _model
-    log_dir = '/Users/Willem/Werk/510/510_cloud_detection/log/' + log_name  #save weights, results & tensorboard /home/NC6user/510_cloud_detection/log/
+    log_name = '0218v0_biome_30ep' # month, day, version, _model
+    log_dir = '/log/' + log_name  #save weights, results & tensorboard /home/NC6user/510_cloud_detection/log/
     checkpoint_path = '/Users/Willem/Werk/510/510_cloud_detection/log/0215v0_biome_30ep/run_2/weights.21.hdf5' #'/Users/Willem/Werk/510/510_cloud_detection/log/0124v0_dataset_38_10ep/weights.08.hdf5' #'/Users/Willem/Werk/510/510_cloud_detection/log/0119v0_dataset_50ep/0119v0_dataset_50ep.h5'
     maxar_path = '/Users/Willem/Werk/510/510_cloud_detection/geotiff_examples/maxar_white_buildings_1.tif'
 
-    train = False
-    resume = True
+    train = True
+    resume = False
     test_model = False
-    test_maxar = True 
+    test_maxar = False 
     model_name = 'UNet' #'CloudXNet', 'UNet'
     epoch=30
-    batch_size=4
+    batch_size=32
     size=256
     lr=1e-4
     resize_factor = 100
