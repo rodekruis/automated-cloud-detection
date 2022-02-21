@@ -30,7 +30,7 @@ def fbeta_score(y_true, y_pred, beta=2., epsilon=K.epsilon()):
     tp = K.sum(y_true_f * y_pred_f)
     predicted_positive = K.sum(y_pred_f)
     actual_positive = K.sum(y_true_f)
-    print(predicted_positive)
+    
     precision = tp/(predicted_positive+epsilon) # calculating precision
     recall = tp/(actual_positive+epsilon) # calculating recall
     
