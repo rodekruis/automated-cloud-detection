@@ -2,7 +2,20 @@
 .DS_Store
 __pycache__/
 bin
+.ipynb_checkpoints/
+
+#ignore directories
 biome_input/
+log/
+geotiff_examples/
+cut_maxar*
 
 #ignore datasets
-*/biome_input/
+/dataset*
+*/biome_input/*
+
+#ignore files
+biome_info.csv
+filtered_biome_012.zip
+test_tile*
+
