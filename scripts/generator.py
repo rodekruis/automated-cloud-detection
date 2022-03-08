@@ -17,7 +17,7 @@ class DataGenerator(Sequence):
     Sequence based data generator. Suitable for building data generator for training and prediction.
     """
     def __init__(self, images, annotations, preprocess_input, to_fit=True,
-                 batch_size=32,width=256, height=256, n_channels=3, shuffle=True,
+                 batch_size=32 ,width=256, height=256, n_channels=3, shuffle=True,
                  augmentation=False, dtype=np.float32):
         """Initialization
 
@@ -39,14 +39,6 @@ class DataGenerator(Sequence):
         """
         self.images = images
         self.annotations = annotations
-
-        # # class variables
-        # self.n_classes = len(classes)
-        # self.class_codes = {}
-        # for c_indx in classes.values():
-        #     code = np.zeros(self.n_classes, dtype=dtype)
-        #     code[c_indx] = 1
-        #     self.class_codes[c_indx] = code
 
         self.preprocess_input = preprocess_input
         self.to_fit = to_fit

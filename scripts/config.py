@@ -33,13 +33,19 @@ def configuration():
         "--checkpoint-path",
         type=str,
         default=os.path.join(".", "runs"),
-        help="output path",
+        help="save training output here",
     )
     parser.add_argument(
         "--data-path",
         type=str,
-        default=os.path.join(".", "input", "inference_preprocessed"),
+        default=os.path.join(".", "data", "2_input_tiles", "inference"),
         help="data path for train or inference folder",
+    )
+    parser.add_argument(
+        "--prediction-path",
+        type=str,
+        default=os.path.join(".", "data", "3_prediction_tiles"),
+        help="path to the predictions made on the input tiles, in case of inference",
     )
     parser.add_argument(
         "--weights-path",
@@ -50,7 +56,7 @@ def configuration():
     parser.add_argument(
         "--run-name",
         type=run_name_type,
-        default="{:.0f}".format(time.time()),
+        default="run_1",
         help="name to identify execution",
     )
     parser.add_argument(
@@ -60,16 +66,16 @@ def configuration():
         help="model architecture to use, either UNet or CloudXNet, choose weight-path corresponding",
     )
     parser.add_argument(
-        "--resize-factor",
-        type=int,
-        default=100,
-        help="factor for resizing inference images to match resolution, model trained on res:30m, maxar res:30cm",
-    )
-    parser.add_argument(
         "--number-of-epochs",
         type=int,
         default=30,
         help="number of epochs for training",
+    )
+    parser.add_argument(
+        "--pred-threshold",
+        type=float,
+        default=0.5,
+        help="threshold used to map probability predictions to integers",
     )
     parser.add_argument(
         "--batch-size", type=int, default=32, help="batch size"
@@ -105,15 +111,8 @@ def configuration():
     arg_vars["checkpoint_path"] = make_directory(
         os.path.join(arg_vars["checkpoint_path"], arg_vars["model_directory"])
     )
-    arg_vars["trained_model_path"] = os.path.join(
+    arg_vars["save_weights_path"] = os.path.join(
         arg_vars["checkpoint_path"], "best_model_wts.pkl"
     )
-    arg_vars["prediction_path"] = make_directory(
-        os.path.join(arg_vars["checkpoint_path"], "predictions")
-    )
-    arg_vars["run_report_path"] = os.path.join(
-        arg_vars["checkpoint_path"], "run_report.json"
-    )
-
 
     return arg_vars  #previously returned args

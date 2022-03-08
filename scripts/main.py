@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import random
 import matplotlib.pyplot as plt
-# from tqdm import tqdm 
+from tqdm import tqdm 
 from PIL import Image
 from sklearn.metrics import confusion_matrix
 # import cv2 #pip install opencv-python==4.0.0.21
@@ -37,10 +37,6 @@ from generator import DataGenerator
 
 def pre_process_max(X):
     return X/np.max(X) #specify type?
-
-
-
-
 
 
 def build_model(checkpoint_path, model_name='CloudXNet', lr=1e-4, size=256, resume=False, freeze_backbone = False):
@@ -113,85 +109,60 @@ def train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir,
         
     return model
 
+# def predict(X_test, pre_process, log_dir, filename, Y_test=None, tile_name=None):
+#     pre_processed_X = np.zeros(X_test.shape, dtype=np.float32)
 
-def create_tiles_for_prediction(tif_path, resize_factor=100, size=256, nr_channels=3):
-    # read downsized image
-    img = rio.open(tif_path)
-    downsized_img = img.read(out_shape = (img.count, img.height//resize_factor, img.width//resize_factor))
+#     for i in range(X_test.shape[0]):
+#         pre_processed_X[i,:,:,:] = pre_process(X_test[i,:,:,:])
 
-    # pad image
-    height = downsized_img.shape[1]
-    width = downsized_img.shape[2]
-    nr_tiles_h = (height//size + 1)
-    nr_tiles_w = (width//size + 1)
-    pad_height = nr_tiles_h*size - height
-    pad_width = nr_tiles_w*size - width
+#     preds_test = model.predict(pre_processed_X, batch_size=2, verbose=1) # X_test between 0 and 1
+#     test_pred = (preds_test > 0.5).astype(int)
 
-    red = np.pad(downsized_img[0], pad_width = ((0,pad_height), (0,pad_width)))
-    green = np.pad(downsized_img[1], pad_width = ((0,pad_height), (0,pad_width)))
-    blue = np.pad(downsized_img[2], pad_width = ((0,pad_height), (0,pad_width)))
-
-    full_img = np.stack((red, green, blue), axis=2)
-    # preprocessed_img = pre_process(full_img)
-    
-    # loop over image and create size*size tiles with padding
-    k=0
-    tile_name = []
-    all_tiles = np.zeros((nr_tiles_h*nr_tiles_w, size , size, nr_channels), dtype=np.int64)
-    for i in range(nr_tiles_h):
-        for j in range(nr_tiles_w): #might need to swap nr_tiles_h/w
-            all_tiles[k,:,:,:] = full_img[i*size:(i+1)*size,j*size:(j+1)*size,:]#/255
-            tile_name.append(str(i*size) + '_' + str(j*size))
-            k +=1
-    
-    return downsized_img, all_tiles, tile_name
-
-
-def load_test_images(test_im, test_an, size=256):
-    X_test = np.zeros((len(test_im), size, size, 3), dtype=np.float32)
-    Y_test = np.zeros((len(test_im), size, size), dtype=np.float32)
-    image_name = []
-
-    for n in range(len(test_im)):
-        img = Image.open(test_im[n])
-        # np_img = np.array(img)
-        np_img = pre_process(np_img)
-        X_test[n] = np_img
+#     for i in range(X_test.shape[0]):
+#         predictions = np.repeat(test_pred[i,:,:], 3, axis=2)
         
-        anno = Image.open(test_an[n])
-        # np_an = (np.array(anno)/255).astype(int)
-        np_an = np.array(anno)
-        Y_test[n] = np_an
-        
-        image_name.append(os.path.splitext(os.path.basename(test_im[n]))[0])
+#         if isinstance(Y_test, np.ndarray): 
+#             annotations = np.repeat(Y_test[i][...,np.newaxis], 3, axis=2)
+#             concat_array = np.concatenate((X_test[i], annotations*255, predictions*255), axis=1)
+#         else:
+#             concat_array = np.concatenate((X_test[i], predictions*255), axis=1)
 
-    return X_test, Y_test, image_name
+#         concat_img = Image.fromarray(concat_array.astype(np.uint8), 'RGB')
+
+#         save_dir = os.path.join(log_dir, filename + '_0.5')
+#         utils.ensure_directory_existance(save_dir)
+
+#         concat_img.save(os.path.join(save_dir, tile_name[i]+'.png'))
+#     return
+
+
+def predict(data_path, predictions_dir, pre_process, threshold = 0.5):
+    # load tiles 
+    scenes = os.listdir(data_path)
+
+    # run over each scene
+    for i in tqdm(range(len(scenes))):
+        # create output folder for scene i and get all files of that scene
+        utils.ensure_directory_existance(os.path.join(predictions_dir, scenes[i]))
+        scene_tiles = glob.glob(os.path.join(data_path, scenes[i], '*.png'))
+        
+        # create outpaths with tile name
+        out_paths = []
+        for j in range(len(scene_tiles)):
+            out_path_tile = os.path.join(predictions_dir, scenes[i], os.path.basename(scene_tiles[j])) 
+            out_paths.append(out_path_tile) 
+
+        # predict
+        predict_gen = DataGenerator(scene_tiles, annotations=None, preprocess_input=pre_process, batch_size=len(scene_tiles), to_fit=False, shuffle=False)
+        probabilities = model.predict(predict_gen)
+        pred = np.uint8((probabilities > threshold)*255)
+
+        # save predictions for all tiles
+        for j in range(len(scene_tiles)):
+            save_tile = Image.fromarray(pred[j,:,:,0])
+            save_tile.save(out_paths[j])
     
 
-def predict(X_test, pre_process, log_dir, filename, Y_test=None, tile_name=None):
-    pre_processed_X = np.zeros(X_test.shape, dtype=np.float32)
-
-    for i in range(X_test.shape[0]):
-        pre_processed_X[i,:,:,:] = pre_process(X_test[i,:,:,:])
-
-    preds_test = model.predict(pre_processed_X, batch_size=2, verbose=1) # X_test between 0 and 1
-    test_pred = (preds_test > 0.0001).astype(int)
-
-    for i in range(X_test.shape[0]):
-        predictions = np.repeat(test_pred[i,:,:], 3, axis=2)
-        
-        if isinstance(Y_test, np.ndarray): 
-            annotations = np.repeat(Y_test[i][...,np.newaxis], 3, axis=2)
-            concat_array = np.concatenate((X_test[i], annotations*255, predictions*255), axis=1)
-        else:
-            concat_array = np.concatenate((X_test[i], predictions*255), axis=1)
-
-        concat_img = Image.fromarray(concat_array.astype(np.uint8), 'RGB')
-
-        save_dir = os.path.join(log_dir, filename + '_0.0001')
-        utils.ensure_directory_existance(save_dir)
-
-        concat_img.save(os.path.join(save_dir, tile_name[i]+'.png'))
     return
 
 
@@ -203,7 +174,8 @@ if __name__ == "__main__":
 
     # dataset parameters
     data_path = args['data_path']
-    log_dir = args['checkpoint_path']
+    train_log_dir = args['checkpoint_path']
+    predictions_dir = os.path.join(args['prediction_path'], args['run_name'])
     path_to_weights = args['weights_path']
     
     
@@ -212,10 +184,9 @@ if __name__ == "__main__":
     model_name = args['model_type'] #'CloudXNet', 'UNet'
     epoch=args['number_of_epochs']
     batch_size=args['batch_size']
-    size=256
     lr = args['learning_rate']
-    resize_factor = args['resize_factor']
-
+    pred_threshold = args['pred_threshold']
+    size = 256
 
     # Build model
     print("Building model")
@@ -224,21 +195,24 @@ if __name__ == "__main__":
 
     # Train model
     if not args['inference']:
+        print("Training")
         # Get data paths
         train_im = utils.get_list_of_files(os.path.join(data_path, 'rgb_images/train/'), ext='.png')
         train_an = utils.get_list_of_files(os.path.join(data_path, 'annotations/train/'), ext='.png')
         val_im = utils.get_list_of_files(os.path.join(data_path, 'rgb_images/val/'), ext='.png')
         val_an = utils.get_list_of_files(os.path.join(data_path, 'annotations/val/'), ext='.png')
-        
-        print("Training")
-        model = train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir, model_name, batch_size=batch_size, epochs=epoch, size=size, augmentation=False)
+
+        model = train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir, model_name, batch_size=batch_size, epochs=epoch, size=256, augmentation=False)
 
     # Inference
     if args['inference']:
         print("Predicting")
-        # pre_process = pre_process_max #in case of testing CloudXNet model (preprocess train: /255, preprocess test: /max)
-        downsized_img, X_test, tile_name = create_tiles_for_prediction(inference_path, resize_factor=resize_factor, size=size, nr_channels=3) #resize factor depends on sensor resolution, landsat 30m, sentinel 10m, maxar 30cm & dataset resized 512->256 & 384 ->256
-        predict(X_test, pre_process=pre_process, tile_name=tile_name, log_dir=log_dir, filename=os.path.splitext(os.path.basename(inference_path))[0])
+
+        #in case of testing CloudXNet model (preprocess test: /max, preprocess train: /255 (which is the returned preprocess function by build_model))
+        if model_name == 'CloudXNet':
+            pre_process = pre_process_max 
+
+        predict(data_path, predictions_dir, pre_process, pred_threshold)
 
 
 
@@ -253,58 +227,58 @@ if __name__ == "__main__":
 
 
 
-    dataset = 'biome_input/' # name of folder 
-    path_data = '/' + dataset #/Users/Willem/Werk/510, /home/NC6user/510_cloud_detection/log/0209v0_biome_20ep
+    # dataset = 'biome_input/' # name of folder 
+    # path_data = '/' + dataset #/Users/Willem/Werk/510, /home/NC6user/510_cloud_detection/log/0209v0_biome_20ep
 
-    log_name = '0218v2_biome_30ep' # month, day, version, _model
-    log_dir = '/log/' + log_name  #save weights, results & tensorboard /home/NC6user/510_cloud_detection/log/
-    path_to_weights = '/Users/Willem/Werk/510/510_cloud_detection/log/0215v0_biome_30ep/run_2/weights.21.hdf5' #'/Users/Willem/Werk/510/510_cloud_detection/log/0124v0_dataset_38_10ep/weights.08.hdf5' #'/Users/Willem/Werk/510/510_cloud_detection/log/0119v0_dataset_50ep/0119v0_dataset_50ep.h5'
-    inference_path = '/Users/Willem/Werk/510/510_cloud_detection/geotiff_examples/maxar_white_buildings_1.tif'
+    # log_name = '0218v2_biome_30ep' # month, day, version, _model
+    # log_dir = '/log/' + log_name  #save weights, results & tensorboard /home/NC6user/510_cloud_detection/log/
+    # path_to_weights = '/Users/Willem/Werk/510/510_cloud_detection/log/0215v0_biome_30ep/run_2/weights.21.hdf5' #'/Users/Willem/Werk/510/510_cloud_detection/log/0124v0_dataset_38_10ep/weights.08.hdf5' #'/Users/Willem/Werk/510/510_cloud_detection/log/0119v0_dataset_50ep/0119v0_dataset_50ep.h5'
+    # inference_path = '/Users/Willem/Werk/510/510_cloud_detection/geotiff_examples/maxar_white_buildings_1.tif'
 
-    train = True
-    resume = False
-    test_model = False
-    test_maxar = False 
-    model_name = 'UNet' #'CloudXNet', 'UNet'
-    epoch=30
-    batch_size=32
-    size=256
-    lr=1e-4
-    resize_factor = 100
-    freeze_backbone = True # only in case of UNet
+    # train = True
+    # resume = False
+    # test_model = False
+    # test_maxar = False 
+    # model_name = 'UNet' #'CloudXNet', 'UNet'
+    # epoch=30
+    # batch_size=32
+    # size=256
+    # lr=1e-4
+    # resize_factor = 100
+    # freeze_backbone = True # only in case of UNet
     
 
 
-    train_im = utils.get_list_of_files(os.path.join(path_data, 'rgb_images/train/'), ext='.png')
-    train_an = utils.get_list_of_files(os.path.join(path_data, 'annotations/train/'), ext='.png')
-    val_im = utils.get_list_of_files(os.path.join(path_data, 'rgb_images/val/'), ext='.png')
-    val_an = utils.get_list_of_files(os.path.join(path_data, 'annotations/val/'), ext='.png')
-    test_im = utils.get_list_of_files(os.path.join(path_data, 'rgb_images/test/'), ext='.png')
-    test_an = utils.get_list_of_files(os.path.join(path_data, 'annotations/test/'), ext='.png')
+    # train_im = utils.get_list_of_files(os.path.join(path_data, 'rgb_images/train/'), ext='.png')
+    # train_an = utils.get_list_of_files(os.path.join(path_data, 'annotations/train/'), ext='.png')
+    # val_im = utils.get_list_of_files(os.path.join(path_data, 'rgb_images/val/'), ext='.png')
+    # val_an = utils.get_list_of_files(os.path.join(path_data, 'annotations/val/'), ext='.png')
+    # test_im = utils.get_list_of_files(os.path.join(path_data, 'rgb_images/test/'), ext='.png')
+    # test_an = utils.get_list_of_files(os.path.join(path_data, 'annotations/test/'), ext='.png')
     
-    # Build model
-    print("Building model")
-    model, pre_process = build_model(path_to_weights, model_name=model_name, lr=lr, size=size, resume=resume, freeze_backbone=freeze_backbone)
+    # # Build model
+    # print("Building model")
+    # model, pre_process = build_model(path_to_weights, model_name=model_name, lr=lr, size=size, resume=resume, freeze_backbone=freeze_backbone)
 
 
-    # Train model
-    if train:
-        print("Training")
-        model = train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir, model_name, batch_size=batch_size, epochs=epoch, size=size, augmentation=False)
+    # # Train model
+    # if train:
+    #     print("Training")
+    #     model = train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir, model_name, batch_size=batch_size, epochs=epoch, size=size, augmentation=False)
 
 
-    # Test model on test set or maxar TIF images
-    if test_model:
-        print("Testing on dataset")
-        X_test, Y_test, image_name = load_test_images(test_im, test_an, size=size)
-        predict(X_test, Y_test=Y_test, tile_name=image_name, log_dir=log_dir, pre_process=pre_process, filename=dataset)
+    # # Test model on test set or maxar TIF images
+    # if test_model:
+    #     print("Testing on dataset")
+    #     X_test, Y_test, image_name = load_test_images(test_im, test_an, size=size)
+    #     predict(X_test, Y_test=Y_test, tile_name=image_name, log_dir=log_dir, pre_process=pre_process, filename=dataset)
 
 
-    if test_maxar:
-        print("Testing Maxar file")
-        # pre_process = pre_process_max #in case of testing CloudXNet model (preprocess train: /255, preprocess test: /max)
-        downsized_img, X_test, tile_name = create_tiles_for_prediction(inference_path, resize_factor=resize_factor, size=size, nr_channels=3) #resize factor depends on sensor resolution, landsat 30m, sentinel 10m, maxar 30cm & dataset resized 512->256 & 384 ->256
-        predict(X_test, pre_process=pre_process, tile_name=tile_name, log_dir=log_dir, filename=os.path.splitext(os.path.basename(inference_path))[0])
+    # if test_maxar:
+    #     print("Testing Maxar file")
+    #     # pre_process = pre_process_max #in case of testing CloudXNet model (preprocess train: /255, preprocess test: /max)
+    #     downsized_img, X_test, tile_name = create_tiles_for_prediction(inference_path, resize_factor=resize_factor, size=size, nr_channels=3) #resize factor depends on sensor resolution, landsat 30m, sentinel 10m, maxar 30cm & dataset resized 512->256 & 384 ->256
+    #     predict(X_test, pre_process=pre_process, tile_name=tile_name, log_dir=log_dir, filename=os.path.splitext(os.path.basename(inference_path))[0])
 
 
     
