@@ -19,13 +19,13 @@ def configuration():
     parser.add_argument(
         "--data-path",
         type=str,
-        default=os.path.join(".", "data", "1_input_scenes", "inference"),
+        default=os.path.join(".", "workdir", "data", "1_input_scenes", "inference"),
         help="data path to train or inference folder containing the scenes",
     )
     parser.add_argument(
         "--out-dir",
         type=str,
-        default=os.path.join(".", "data", "2_input_tiles", "inference"),
+        default=os.path.join(".", "workdir", "data", "2_input_tiles", "inference"),
         help="output path to folder for preprocessed tiles",
     )
     parser.add_argument(
