@@ -65,5 +65,11 @@ def ensure_directory_existance(dir_path):
         os.makedirs(dir_path)
 
 
-
+def get_dirs_in_dir(path):
+    """
+    This function gets all subdirectories from a directory. 
+    Used to surpass the .gitkeep files in the data folder structure.
+    """
+    dir_paths = [x for x in os.listdir(path) if os.path.isdir(os.path.join(path,x))]
+    return dir_paths
 
