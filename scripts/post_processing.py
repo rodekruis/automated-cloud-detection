@@ -65,7 +65,7 @@ def combine_tiles(input_path, run_name, output_path, size, return_tif, resize_fa
     # loop over all runs to merge them
     for run in run_to_merge:
         # get all scenes from this run and build output dir for this run
-        all_scenes = os.listdir(os.path.join(input_path, run))
+        all_scenes = [x for x in os.listdir(os.path.join(input_path, run)) if os.path.isdir(os.path.join(input_path, run, x))]
         utils.ensure_directory_existance(os.path.join(output_path, run))
         
         for i in tqdm(range(len(all_scenes))):
