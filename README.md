@@ -50,20 +50,20 @@ docker exec -it cloud-detection bash
 ## End-to-end inference example
 Firstly, tile and preprocess the scenes in data/1_input_scenes/inference folder. Running the following command will tile all scenes and output them in data/2_input_tiles.
 ```
-python workdir/scripts/pre_processing.py --inference
+python /workdir/scripts/pre_processing.py --inference
 ```
 
 Secondly, run inference on the tiles with the already trained model. By default the weights are from a model that penalizes false negatives more heavily (UNet/f2_all (using f2-score as loss)) but you could also change that into a more conservative model by adding '--weights-path ./weights/UNet/f1_all_0215v0.hdf5' (f1-loss). You could also use the CloudXNet model, then you should add '--model-type CloudXNet' and include the path to the CloudXNet weights. Depending on the model, a preprocessing step happens before inference on the input tiles (the pre-trained UNet requires the tiles to be preprocessed in the same way as for ImageNet). The default way to run inference on the input tiles is by runnning:
 
 
 ```
-python workdir/scripts/main.py --inference 
+python /workdir/scripts/main.py --inference 
 ```
 
 
 Finally, run the postprocessing script to merge all tiles into a scene level prediction. Specify --run-name to be the same as used in the previous inference step, when not specified, the tiles of all runs are merged (seperately per run). Furthermore add --return-tif if you want the output returned as a tif file (takes significantly longer than png). If used, check whether the input tif scene used in preprocessing is in the right directory (see --return-tif help) and use the same resize-factor as in preprocessing (by default 100, as the default in preprocessing).
 ```
-python workdir/scripts/post_processing.py --return-tif 
+python /workdir/scripts/post_processing.py --return-tif 
 ```
 
 The output of each scene can then be found in data/4_prediction_scenes.
