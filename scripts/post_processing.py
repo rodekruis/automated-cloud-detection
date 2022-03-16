@@ -88,7 +88,7 @@ def combine_tiles(input_path, run_name, output_path, size, return_tif, resize_fa
             # if we want to return a tif file, read in the input tif from input_scenes to get the crs
             if return_tif:
                     # get input tif paths
-                    all_input_tif_paths = utils.get_list_of_files('/Users/Willem/Werk/510/510_cloud_detection/data/input_scenes', '.tif')
+                    all_input_tif_paths = utils.get_list_of_files('/Users/Willem/Werk/510/510_cloud_detection/data/1_input_scenes/inference', '.tif')
                     tif_path_list = [x for x in all_input_tif_paths if os.path.splitext(os.path.basename(x))[0] == all_scenes[i]]
 
                     if len(tif_path_list) == 0:
