@@ -138,7 +138,7 @@ def train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir,
 
 def predict(data_path, predictions_dir, pre_process, threshold = 0.5):
     # load tiles 
-    scenes = os.listdir(data_path)
+    scenes = [x for x in os.listdir(data_path) if os.path.isdir(os.path.join(data_path,x))]
 
     # run over each scene
     for i in tqdm(range(len(scenes))):
@@ -170,7 +170,6 @@ def predict(data_path, predictions_dir, pre_process, threshold = 0.5):
 if __name__ == "__main__":
     print("Initializing")
     args = config.configuration()
-    print(args)
 
     # dataset parameters
     data_path = args['data_path']

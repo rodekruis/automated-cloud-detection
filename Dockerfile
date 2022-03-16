@@ -4,4 +4,4 @@ COPY req.txt /req.txt
 
 RUN pip install -r req.txt
 
-COPY ./data /data
+

@@ -18,13 +18,13 @@ def configuration():
     parser.add_argument(
         "--input-path",
         type=str,
-        default=os.path.join(".", "workdir", "data", "3_prediction_tiles"),
+        default=os.path.join("workdir", "data", "3_prediction_tiles"),
         help="path to the input tiles (predictions)",
     )
     parser.add_argument(
         "--output-path",
         type=str,
-        default=os.path.join(".", "workdir", "data", "4_prediction_scenes"),
+        default=os.path.join("workdir", "data", "4_prediction_scenes"),
         help="path to the output scene",
     )
     parser.add_argument(

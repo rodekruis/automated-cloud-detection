@@ -32,25 +32,25 @@ def configuration():
     parser.add_argument(
         "--checkpoint-path",
         type=str,
-        default=os.path.join(".", "workdir", "runs"),
+        default=os.path.join("workdir", "runs"),
         help="save training output here",
     )
     parser.add_argument(
         "--data-path",
         type=str,
-        default=os.path.join(".", "workdir", "data", "2_input_tiles", "inference"),
+        default=os.path.join("workdir", "data", "2_input_tiles", "inference"),
         help="data path for train or inference folder",
     )
     parser.add_argument(
         "--prediction-path",
         type=str,
-        default=os.path.join(".", "workdir", "data", "3_prediction_tiles"),
+        default=os.path.join("workdir", "data", "3_prediction_tiles"),
         help="path to the predictions made on the input tiles, in case of inference",
     )
     parser.add_argument(
         "--weights-path",
         type=str,
-        default=os.path.join(".", "workdir", "weights", "UNet", "f2_all_0218v2.hdf5"),
+        default=os.path.join("workdir", "weights", "UNet", "f2_all_0218v2.hdf5"),
         help="path to weights to resume from",
     )
     parser.add_argument(
