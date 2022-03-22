@@ -109,31 +109,6 @@ def train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir,
         
     return model
 
-# def predict(X_test, pre_process, log_dir, filename, Y_test=None, tile_name=None):
-#     pre_processed_X = np.zeros(X_test.shape, dtype=np.float32)
-
-#     for i in range(X_test.shape[0]):
-#         pre_processed_X[i,:,:,:] = pre_process(X_test[i,:,:,:])
-
-#     preds_test = model.predict(pre_processed_X, batch_size=2, verbose=1) # X_test between 0 and 1
-#     test_pred = (preds_test > 0.5).astype(int)
-
-#     for i in range(X_test.shape[0]):
-#         predictions = np.repeat(test_pred[i,:,:], 3, axis=2)
-        
-#         if isinstance(Y_test, np.ndarray): 
-#             annotations = np.repeat(Y_test[i][...,np.newaxis], 3, axis=2)
-#             concat_array = np.concatenate((X_test[i], annotations*255, predictions*255), axis=1)
-#         else:
-#             concat_array = np.concatenate((X_test[i], predictions*255), axis=1)
-
-#         concat_img = Image.fromarray(concat_array.astype(np.uint8), 'RGB')
-
-#         save_dir = os.path.join(log_dir, filename + '_0.5')
-#         utils.ensure_directory_existance(save_dir)
-
-#         concat_img.save(os.path.join(save_dir, tile_name[i]+'.png'))
-#     return
 
 
 def predict(data_path, predictions_dir, pre_process, threshold = 0.5):
@@ -145,25 +120,59 @@ def predict(data_path, predictions_dir, pre_process, threshold = 0.5):
         # create output folder for scene i and get all files of that scene
         utils.ensure_directory_existance(os.path.join(predictions_dir, scenes[i]))
         scene_tiles = glob.glob(os.path.join(data_path, scenes[i], '*.png'))
-        
-        # create outpaths with tile name
-        out_paths = []
-        for j in range(len(scene_tiles)):
-            out_path_tile = os.path.join(predictions_dir, scenes[i], os.path.basename(scene_tiles[j])) 
-            out_paths.append(out_path_tile) 
-
+                
         # predict
-        predict_gen = DataGenerator(scene_tiles, annotations=None, preprocess_input=pre_process, batch_size=len(scene_tiles), to_fit=False, shuffle=False)
-        probabilities = model.predict(predict_gen)
-        pred = np.uint8((probabilities > threshold)*255)
+        batch_size = 8
+        for j in range(0, len(scene_tiles), batch_size):
+            print("at tile {} of {} from scene {}".format(j, len(scene_tiles), scenes[i]))
+            generator = DataGenerator(scene_tiles[j:j+batch_size], annotations=None, preprocess_input=pre_process, 
+                                    batch_size=batch_size, to_fit=False, shuffle=False)
+            
+            probabilities = model.predict(generator, steps=len(scene_tiles[j:j+batch_size]))
+            pred = np.uint8((probabilities > threshold)*255)
 
-        # save predictions for all tiles
-        for j in range(len(scene_tiles)):
-            save_tile = Image.fromarray(pred[j,:,:,0])
-            save_tile.save(out_paths[j])
-    
+            # save predictions for all tiles
+            for k in range(len(scene_tiles[j:j+batch_size])):
+                out_path_tile = os.path.join(predictions_dir, scenes[i], os.path.basename(scene_tiles[k])) 
+                save_tile = Image.fromarray(pred[k,:,:,0])
+                save_tile.save(out_path_tile)
 
     return
+
+
+
+
+
+
+# def predict(data_path, predictions_dir, pre_process, threshold = 0.5):
+#     # load tiles 
+#     scenes = [x for x in os.listdir(data_path) if os.path.isdir(os.path.join(data_path,x))]
+
+#     # run over each scene
+#     for i in tqdm(range(len(scenes))):
+#         # create output folder for scene i and get all files of that scene
+#         utils.ensure_directory_existance(os.path.join(predictions_dir, scenes[i]))
+#         scene_tiles = glob.glob(os.path.join(data_path, scenes[i], '*.png'))
+        
+#         # create outpaths with tile name
+#         out_paths = []
+#         for j in range(len(scene_tiles)):
+#             out_path_tile = os.path.join(predictions_dir, scenes[i], os.path.basename(scene_tiles[j])) 
+#             out_paths.append(out_path_tile) 
+
+#         # predict
+#         predict_gen = DataGenerator(scene_tiles, annotations=None, preprocess_input=pre_process, batch_size=len(scene_tiles), to_fit=False, shuffle=False)
+#         probabilities = model.predict(predict_gen)
+#         pred = np.uint8((probabilities > threshold)*255)
+
+#         # save predictions for all tiles
+#         for j in range(len(scene_tiles)):
+#             save_tile = Image.fromarray(pred[j,:,:,0])
+#             save_tile.save(out_paths[j])
+    
+
+#     return
+
 
 
 
