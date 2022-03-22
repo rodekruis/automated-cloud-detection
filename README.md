@@ -1,4 +1,4 @@
-# cloud_detection
+# cloud-detection
 
 
 
@@ -53,7 +53,7 @@ Firstly, tile and preprocess the scenes in data/1_input_scenes/inference folder.
 python /workdir/scripts/pre_processing.py --inference
 ```
 
-Secondly, run inference on the tiles with the already trained model. By default the weights are from a model that penalizes false negatives more heavily (UNet/f2_all (using f2-score as loss)) but you could also change that into a more conservative model by adding '--weights-path ./weights/UNet/f1_all_0215v0.hdf5' (f1-loss). You could also use the CloudXNet model, then you should add '--model-type CloudXNet' and include the path to the CloudXNet weights. Depending on the model, a preprocessing step happens before inference on the input tiles (the pre-trained UNet requires the tiles to be preprocessed in the same way as for ImageNet). The default way to run inference on the input tiles is by runnning:
+Secondly, run inference on the tiles with the already trained model. By default the weights are from a model that penalizes false negatives more heavily (UNet/f2_all (using f2-score as loss)) but you could also change that into a more conservative model by adding '--weights-path /workdir/weights/UNet/f1_all_0215v0.hdf5' (f1-loss). You could also use the CloudXNet model, then you should add '--model-type CloudXNet' and include the path to the CloudXNet weights. Depending on the model, an extra preprocessing step happens before inference on the input tiles (the pre-trained UNet requires the tiles to be preprocessed in the same way as for ImageNet). The default way to run inference on the input tiles is by runnning:
 
 
 ```
@@ -71,9 +71,16 @@ The output of each scene can then be found in data/4_prediction_scenes.
 
 
 
-## End-to-end training example
+## End-to-end training on Biome data
 
-
-For training, preprocessing can be skipped and you can directly download the already preprocessed tiles in input/train_preprocessed using this link. If you would like to train the model on an other dataset then biome, 
+For training, preprocessing can be skipped and you can directly download the already preprocessed tiles in data/2_input_tiles using this link. If you would like to train the model on an other dataset then biome, then you should run the preprocessing script and follow the explanation below on training with new data.
 
 If you wish to train the model, omit the --inference argument. The model resumes from weigths given by --weights-path, if you don't want that, train the model from scratch (but still with pre-trained vgg weights in case of UNet) by adding --scratch.
+
+
+
+
+
+## Training with new data
+
+
