@@ -126,7 +126,7 @@ def predict(data_path, predictions_dir, pre_process, threshold = 0.5):
         for j in range(0, len(scene_tiles), batch_size):
             print("at tile {} of {} from scene {}".format(j, len(scene_tiles), scenes[i]))
             generator = DataGenerator(scene_tiles[j:j+batch_size], annotations=None, preprocess_input=pre_process, 
-                                    batch_size=batch_size, to_fit=False, shuffle=False)
+                                    batch_size=1, to_fit=False, shuffle=False)
             
             probabilities = model.predict(generator, steps=len(scene_tiles[j:j+batch_size]))
             pred = np.uint8((probabilities > threshold)*255)
