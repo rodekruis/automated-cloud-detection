@@ -101,18 +101,8 @@ def configuration():
     arg_vars["model_name"] = arg_vars["run_name"]
 
 
-    arg_vars[
-        "model_directory"
-    ] = "{}-nr_epochs_{}".format(
-        arg_vars["run_name"],
-        arg_vars["number_of_epochs"],
-    )
-
     arg_vars["checkpoint_path"] = make_directory(
-        os.path.join(arg_vars["checkpoint_path"], arg_vars["model_directory"])
-    )
-    arg_vars["save_weights_path"] = os.path.join(
-        arg_vars["checkpoint_path"], "best_model_wts.pkl"
+        os.path.join(arg_vars["checkpoint_path"], arg_vars["run_name"])
     )
 
     return arg_vars  #previously returned args

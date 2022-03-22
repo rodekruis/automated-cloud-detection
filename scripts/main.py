@@ -195,13 +195,18 @@ if __name__ == "__main__":
     # Train model
     if not args['inference']:
         print("Training")
-        # Get data paths
+
+        # if data_path is the default path, change to train folder
+        if data_path == os.path.join("workdir", "data", "2_input_tiles", "inference"):
+            data_path = os.path.join("workdir", "data", "2_input_tiles", "train")
+
+        # Get train and validation data
         train_im = utils.get_list_of_files(os.path.join(data_path, 'rgb_images/train/'), ext='.png')
         train_an = utils.get_list_of_files(os.path.join(data_path, 'annotations/train/'), ext='.png')
         val_im = utils.get_list_of_files(os.path.join(data_path, 'rgb_images/val/'), ext='.png')
         val_an = utils.get_list_of_files(os.path.join(data_path, 'annotations/val/'), ext='.png')
 
-        model = train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir, model_name, batch_size=batch_size, epochs=epoch, size=256, augmentation=False)
+        model = train_model(model, train_im, train_an, val_im, val_an, pre_process, train_log_dir, model_name, batch_size=batch_size, epochs=epoch, size=256, augmentation=False)
 
     # Inference
     if args['inference']:

@@ -43,8 +43,8 @@ def configuration():
     parser.add_argument(
         "--resize-factor",
         type=int,
-        default=100,
-        help="factor for resizing inference images to match resolution, model trained on res:30m, maxar res:30cm",
+        default=24,
+        help="factor for resizing inference images to match resolution, model trained on res:30m, maxar res:1.24m",
     )
     args = parser.parse_args()
 
@@ -126,18 +126,16 @@ if __name__ == "__main__":
     else:
         print('preprocess train scene')
 
+        # In case of default data path, change input data to train directory
+        if data_path == os.path.join("workdir", "data", "1_input_scenes", "inference"):
+            data_path = os.path.join("workdir", "data", "1_input_scenes", "train")
 
-    
-
-
-
-
-
-
-
-
-
-
+        # In case of default output path, change output to train directory
+        if data_path == os.path.join("workdir", "data", "2_input_tiles", "inference"):
+            data_path = os.path.join("workdir", "data", "2_input_tiles", "train")
+        
+        # run preprocessing for train, should be adjusted for specific input data
+        # preprocess_train(dir_path, path_data, size=256)
 
 
 
@@ -149,7 +147,9 @@ if __name__ == "__main__":
 
 
 
-def preprocess_train_scene(dir_path, path_data, size=256):
+
+
+def preprocess_train(dir_path, path_data, size=256):
     
     scene_name = os.path.split(dir_path)[1]
 
@@ -176,7 +176,7 @@ def preprocess_train_scene(dir_path, path_data, size=256):
         reader_g = rio.open([x for x in all_tif_paths if file_name + '_B3'in x][0])
         reader_b = rio.open([x for x in all_tif_paths if file_name + '_B2'in x][0])
 
-        # combine bands in array
+        # combine bands in array and apply normalization
         scaled_r = scale_pct(reader_r.read(1))
         scaled_g = scale_pct(reader_g.read(1))
         scaled_b = scale_pct(reader_b.read(1))
