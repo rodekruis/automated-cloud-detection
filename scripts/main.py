@@ -114,6 +114,7 @@ def train_model(model, train_im, train_an, val_im, val_an, pre_process, log_dir,
 def predict(data_path, predictions_dir, pre_process, threshold = 0.5):
     # load tiles 
     scenes = [x for x in os.listdir(data_path) if os.path.isdir(os.path.join(data_path,x))]
+    batch_size = 8
 
     # run over each scene
     for i in tqdm(range(len(scenes))):
@@ -122,7 +123,6 @@ def predict(data_path, predictions_dir, pre_process, threshold = 0.5):
         scene_tiles = glob.glob(os.path.join(data_path, scenes[i], '*.png'))
                 
         # predict
-        batch_size = 8
         for j in range(0, len(scene_tiles), batch_size):
             print("at tile {} of {} from scene {}".format(j, len(scene_tiles), scenes[i]))
             generator = DataGenerator(scene_tiles[j:j+batch_size], annotations=None, preprocess_input=pre_process, 
@@ -133,7 +133,7 @@ def predict(data_path, predictions_dir, pre_process, threshold = 0.5):
 
             # save predictions for all tiles
             for k in range(len(scene_tiles[j:j+batch_size])):
-                out_path_tile = os.path.join(predictions_dir, scenes[i], os.path.basename(scene_tiles[k])) 
+                out_path_tile = os.path.join(predictions_dir, scenes[i], os.path.basename(scene_tiles[j+k])) 
                 save_tile = Image.fromarray(pred[k,:,:,0])
                 save_tile.save(out_path_tile)
 
