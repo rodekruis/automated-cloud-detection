@@ -7,6 +7,7 @@
 
 
 ## Structure
+For the preprocessing, main and postprocessing scripts config options are availabe, an in depth explanation of these options can be found in the README file in the `scripts` directory.
 * `scripts` functions to preprocess data, build the model and apply inference
 * `weights` contains the optimal trained weights
 * `data` input and destination for intermediate results and output

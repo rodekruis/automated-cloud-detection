@@ -42,7 +42,7 @@ def configuration():
     parser.add_argument(
         "--resize-factor",
         type=int,
-        default=24,
+        default=100,
         help="factor for resizing the tiles back to the original tif size, model trained on res:30m, maxar res:1.24m",
     )
 

@@ -43,7 +43,7 @@ def configuration():
     parser.add_argument(
         "--resize-factor",
         type=int,
-        default=24,
+        default=100,
         help="factor for resizing inference images to match resolution, model trained on res:30m, maxar res:1.24m",
     )
     args = parser.parse_args()
