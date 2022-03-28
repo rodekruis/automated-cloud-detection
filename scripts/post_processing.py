@@ -105,7 +105,7 @@ def combine_tiles(input_path, run_name, output_path, size, return_tif, resize_fa
                         open_tif = rio.open(tif_path_list[0])
 
                         with rio.open(os.path.join(output_path, run, all_scenes[i] + '.tif'), 'w', driver='GTiff', height=open_tif.height, 
-                            width=open_tif.width, count=1, crs=open_tif.crs, dtype=rio.int8, transform=open_tif.transform) as dst:
+                            width=open_tif.width, count=1, crs=open_tif.crs, dtype='uint8', transform=open_tif.transform, compress='jpeg') as dst:
                             dst.write(enlarged_pred[np.newaxis, 0:open_tif.height, 0:open_tif.width])
 
                         open_tif.close
