@@ -23,13 +23,19 @@ def configuration():
     parser.add_argument(
         "--input-path",
         type=str,
-        default=os.path.join("workdir", "data", "3_prediction_tiles"),
+        default=os.path.join("/workdir", "data", "3_prediction_tiles"),
+        help="path to the input tiles (predictions)",
+    )
+    parser.add_argument(
+        "--tif-input-path",
+        type=str,
+        default=os.path.join("workdir", "data", "1_input_scenes", "inference"),
         help="path to the input tiles (predictions)",
     )
     parser.add_argument(
         "--output-path",
         type=str,
-        default=os.path.join("workdir", "data", "4_prediction_scenes"),
+        default=os.path.join("/workdir", "data", "4_prediction_scenes"),
         help="path to the output scene",
     )
     parser.add_argument(
@@ -39,10 +45,10 @@ def configuration():
         help="name to identify execution, if not supplied will merge the predictions of all scenes",
     )
     parser.add_argument(
-        "--return-tif",
+        "--return-png",
         action="store_true",
         default=False,
-        help="returns output as a tif file, requires that the input tif file can be found in .data/input_scenes/",
+        help="returns output as a png file",
     )
     parser.add_argument(
         "--return-poly",
@@ -64,7 +70,7 @@ def configuration():
     return arg_vars
 
 
-def combine_tiles(input_path, run_name, output_path, size, return_tif, return_poly, resize_factor):
+def combine_tiles(input_path, tif_input_path, run_name, output_path, size, return_tif, return_poly, resize_factor):
     # load all scenes from run which we want to merge
     all_runs = utils.get_dirs_in_dir(input_path)
     run_to_merge = [x for x in all_runs if x == run_name]
@@ -99,7 +105,7 @@ def combine_tiles(input_path, run_name, output_path, size, return_tif, return_po
             # if we want to return a tif file, read in the input tif from input_scenes to get the crs
             if return_tif:
                 # get input tif paths
-                all_input_tif_paths = utils.get_list_of_files(os.path.join("workdir", "data", "1_input_scenes", "inference"), '.tif')
+                all_input_tif_paths = utils.get_list_of_files(tif_input_path), '.tif')
                 tif_path_list = [x for x in all_input_tif_paths if os.path.splitext(os.path.basename(x))[0] == all_scenes[i]]
 
                 if len(tif_path_list) == 0:
@@ -154,13 +160,14 @@ if __name__ == "__main__":
     input_path = args['input_path']
     run_name = args['run_name']
     output_path = args['output_path']
-    return_tif = args['return_tif']
+    return_tif != args['return_png']
     resize_factor = args['resize_factor']
     return_poly = args["return_poly"]
+    tif_input_path = args['tif_input_path']
 
     size = 256
 
-    combine_tiles(input_path, run_name, output_path, size, return_tif, return_poly, resize_factor)
+    combine_tiles(input_path, tif_input_path, run_name, output_path, size, return_tif, return_poly, resize_factor)
 
 
 

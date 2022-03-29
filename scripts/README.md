@@ -10,7 +10,7 @@ For each pre_processing, main and post_processing script seperate config options
 
 `--norm-percentile` gives the percentile to normalize with. The Maxar images and the uploaded Biome dataset are already normalized so for them no extra normalization is needed. However, when training on a new dataset or inference with non Maxar images that need normalization it should be specified. Use a value of 2 for light normalization, 5 for medium and 10 for heavy. Since raw Biome data is significantly darker then Maxar data, a value of 10 is used previously.
 
-`--resize-factor` this factor is used to downsize Maxar data, so in case of inference. The resolution for the Biome training data is 30m, while the Maxar data has a resolution of 30cm, so to match this the Maxar data is resized by factor 100. So when using a new training dataset this value should be changed according to the new resolution.
+`--resize-factor` this factor is used to downsize Maxar data, so in case of inference. The resolution for the Biome training data is 30m, while the Maxar data has a resolution of 1.24m, so to match this the Maxar data should be resized by 24. However, the model seems to work better when the data is resized 100 times. So when using a new training dataset this value should be changed according to the new resolution.
 
 
 ## main config
@@ -40,18 +40,15 @@ For each pre_processing, main and post_processing script seperate config options
 ## post_processing
 `--input-path` Path to the tiles to be merged into the big input tif again. If `--run-name` is specified, this will be added to the input path, so that only tiles in that run will be merged, if not specified, the tiles of all runs will be specified. By default the input path is /workdir/data/3_prediction_tiles, which is the default output of the main script (in case of inference).
 
+`--tif-input-path` The path to the original input tif scenes. This is needed to add geolocation to the output. It takes as default, the default location of the data input for the preprocessing script, which is /workdir/data/1_input_scenes/inference.
+
 `--output-path` The output path for the merged tiles. 
 
 `--run-name` Name of the run. If the run is given a name in the main script, you should include the same run-name in postprocessing. See `--input-path` for more information.
 
-`--return-tif` The merged tif file can be outputted in different formats. 
+`--return-png` The merged scene can be outputted in different formats. Default is in tif format. However if `--return-png` is included, the output will be a png. This is significantly quicker. 
 
-
-
-
-
-
-if data path to input changed in preprocessing?
+`--resize-factor` This factor is used to match the resolution of the training and test data. Important is that this should be the same value as used in preprocessing. By default it is the same, however if changed in preprocessing, it should be changed here as well.
 
 
 

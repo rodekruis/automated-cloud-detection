@@ -60,13 +60,12 @@ Secondly, run inference on the tiles with the already trained model. You can cho
 
 
 ```
-python /workdir/scripts/main.py --inference 
+python /workdir/scripts/main.py --inference --run-name run_1
 ```
 
-
-Finally, run the postprocessing script to merge all tiles into a scene level prediction. Specify --run-name to be the same as used in the previous inference step, when not specified, the tiles of all runs are merged (seperately per run). Furthermore add --return-tif if you want the output returned as a tif file (takes significantly longer than png). If used, check whether the input tif scene used in preprocessing is in the right directory (see --return-tif help) and use the same resize-factor as in preprocessing (by default 100, as the default in preprocessing).
+Finally, run the postprocessing script to merge all tiles into a scene level prediction. Specify --run-name to be the same as used in the previous inference step, when not specified, the tiles of all runs are merged (seperately per run).
 ```
-python /workdir/scripts/post_processing.py --return-tif 
+python /workdir/scripts/post_processing.py --run-name run_1
 ```
 
 The output of each scene can then be found in data/4_prediction_scenes.
