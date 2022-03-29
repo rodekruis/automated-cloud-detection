@@ -38,6 +38,16 @@ For each pre_processing, main and post_processing script seperate config options
 
 
 ## post_processing
+`--input-path` Path to the tiles to be merged into the big input tif again. If `--run-name` is specified, this will be added to the input path, so that only tiles in that run will be merged, if not specified, the tiles of all runs will be specified. By default the input path is /workdir/data/3_prediction_tiles, which is the default output of the main script (in case of inference).
+
+`--output-path` The output path for the merged tiles. 
+
+`--run-name` Name of the run. If the run is given a name in the main script, you should include the same run-name in postprocessing. See `--input-path` for more information.
+
+`--return-tif` The merged tif file can be outputted in different formats. 
+
+
+
 
 
 
